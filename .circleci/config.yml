@@ -275,17 +275,17 @@ jobs:
     steps:
       - checkout
       - run:
-          name: get stack list
+          name: get old workflow id
           command: |
             export OldWorkflowId=$(aws cloudformation \
-              list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
+              list-exports --query "Exports[?Name==\`ID\`].Value" \
               --no-paginate --output text)
-      - run:
-          name: get old workflow id
-          command: |  
-            export STACKS=($(aws cloudformation list-stacks --query "StackSummaries[*].StackName" \
-              --stack-status-filter CREATE_COMPLETE --no-paginate --output text)) 
             echo "Old workflow Id: ${OldWorkflowId} :end"  
+      - run:
+          name: get stack list 
+          command: |  
+            export STACKS=($(aws cloudformation list-stacks --region ${AWS_DEFAULT_REGION} --query "StackSummaries[*].StackName" \
+              --stack-status-filter CREATE_COMPLETE --no-paginate --output text)) 
       - run:
           name: promote
           command: |  
