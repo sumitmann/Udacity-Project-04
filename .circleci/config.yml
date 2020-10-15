@@ -198,7 +198,7 @@ jobs:
             ansible-playbook -i inventory.txt configure-server.yml
       - destroy-stacks
 
-  deploy-frontend:
+  deploy-backend-frontend:
     docker:
       - image: circleci/python:3.8.2
     steps:
@@ -221,13 +221,16 @@ jobs:
             export API_URL="http://${BACKEND_IP}:3030"
             echo "${API_URL}"
       - run:
-          name: Deploy frontend objects
+          name: install frontend dependencies
           command: |
             cd frontend
             npm install
             npm run build
-            tar -czvf artifact-"${CIRCLE_WORKFLOW_ID}".tar.gz dist
-            aws s3 sync . s3://udapeople-"${CIRCLE_WORKFLOW_ID}" --delete
+      - run: copy frontend files
+          name: Install awscli
+          command: |
+            pip install awscli
+      - run: aws s3 cp frontend/dist . s3://udapeople-"${CIRCLE_WORKFLOW_ID}" --delete
       - destroy-stacks
       - revert-migrations
 
@@ -256,17 +259,15 @@ jobs:
       - run:
           name: Smoke test frontend
           command: |
-            export S3_URL="http://udapeople-${CIRCLE_WORKFLOW_ID}.s3.amazonaws.com/index.html#/employees"
-            if curl -s ${S3_URL} | grep "Welcome"
+            URL="http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website-us-east-1.amazonaws.com/#/employees"            
+            if curl -s ${URL} | grep "Welcome"
             then
-              exit 1
+            return 1
             else
-              exit 0
+            return 0
             fi
       - destroy-stacks
-      - revert-migrations 
-
-#  smoke-test:
+      - revert-migrations
 
 #  cloudfront-update:
 
