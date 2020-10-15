@@ -135,6 +135,10 @@ jobs:
     steps:
       - checkout
       - install_aws
+          command: |
+            aws cloudformation list-stacks --region ${AWS_DEFAULT_REGION} --stack-status-filter CREATE_COMPLETE --query "StackSummaries[].[StackName]" --output text | grep backend | awk -F- '{print $2}' | tee project/.circleci/ansible/old_workflow.txt
+            export OldWorkflowId=`cat project/.circleci/ansible/old_workflow.txt`
+            echo "Old workflow Id: ${OldWorkflowId}"
       - run:
           name: Deploy Backend Infrastructure
           command: |
@@ -162,6 +166,7 @@ jobs:
           root: ~/
           paths:
             - project/.circleci/ansible/inventory.txt
+            - project/.circleci/ansible/old_workflow.txt
       - destroy-stacks
 
   configure-infrastructure:
@@ -273,12 +278,13 @@ jobs:
     docker:
       - image: amazon/aws-cli
     steps:
-      - checkout             
+      - checkout
+      - attach_workspace:
+          at: ~/         
       - run:
           name: get old workflow id
           command: |
-            aws cloudformation list-stacks --region ${AWS_DEFAULT_REGION} --stack-status-filter CREATE_COMPLETE --query "StackSummaries[].[StackName]" --output text | grep backend | awk -F- '{print $2}' | tee old_workflow.txt
-            export OldWorkflowId=`cat old_workflow.txt`
+            export OldWorkflowId=`cat project/.circleci/ansible/old_workflow.txt`
             echo "Old workflow Id: ${OldWorkflowId}" 
       - run:
           name: promote
