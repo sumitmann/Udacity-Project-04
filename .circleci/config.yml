@@ -14,7 +14,7 @@ commands:
       - run:
           name: Destroy environment
           command: |
-            aws s3 rb s3://udapeople-"${CIRCLE_WORKFLOW_ID}" --force
+            aws s3 rb s3://udapeople-"${CIRCLE_WORKFLOW_ID:0:7}" --force
             aws cloudformation delete-stack --stack-name frontend-stack
             aws cloudformation delete-stack --stack-name backend-stack
           when: on_fail 
@@ -141,7 +141,7 @@ jobs:
             cd .circleci/files
             aws cloudformation deploy \
             --template-file backend.yml \
-            --parameter-overrides ID="${CIRCLE_WORKFLOW_ID}"  \
+            --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"  \
             --stack-name backend-stack
       - run:
           name: Deploy Frontend Infrastructure
@@ -149,13 +149,13 @@ jobs:
             cd .circleci/files
             aws cloudformation deploy \
             --template-file frontend.yml \
-            --parameter-overrides ID="${CIRCLE_WORKFLOW_ID}"  \
+            --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"  \
             --stack-name frontend-stack
       - run:
           name: Add Backend EC2 Instance IP to inventory
           command: |
             aws ec2 describe-instances \
-              --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID}" \
+              --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
               --output text >> .circleci/ansible/inventory.txt
       - persist_to_workspace:
@@ -215,7 +215,7 @@ jobs:
           name: Get backend url
           command: |
             export BACKEND_IP=$(aws ec2 describe-instances \
-              --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID}" \
+              --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
               --output text)
             export API_URL="http://${BACKEND_IP}:3030"
@@ -230,7 +230,7 @@ jobs:
           name: copy frontend files
           command: |
             pip install awscli
-      - run: aws s3 cp frontend/dist s3://udapeople-${CIRCLE_WORKFLOW_ID}/ --recursive
+      - run: aws s3 cp frontend/dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7}/ --recursive
       - destroy-stacks
       - revert-migrations
 
@@ -251,7 +251,7 @@ jobs:
           name: Smoke test backend
           command: |
             export BACKEND_IP=$(aws ec2 describe-instances \
-              --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID}" \
+              --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
               --output text)
             export API_URL="http://${BACKEND_IP}:3030"
@@ -269,7 +269,19 @@ jobs:
       - destroy-stacks
       - revert-migrations
 
-#  cloudfront-update:
+  cloudfront-update:
+    docker:
+      - image: amazon/aws-cli
+    steps:
+      - checkout
+      - run:
+          name: Update Cloudfront distribution
+          command: |  
+            aws cloudformation deploy \
+              --template-file .circleci/files/cloudfront.yml \
+              --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:7}" \
+              --stack-name "cloudfront-${CIRCLE_WORKFLOW_ID:0:7}"  \
+              --tags project=udapeople
 
 workflows:
   default:
@@ -292,3 +304,6 @@ workflows:
           requires: [configure-infrastructure]
       - smoke-test:
           requires: [deploy-frontend-backend]
+      - cloudfront-update:
+          requires: [smoke-test]
+
