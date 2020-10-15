@@ -276,9 +276,10 @@ jobs:
       - checkout             
       - run:
           name: get old workflow id
-          command: |  
-            export OldWorkflowId=(aws cloudformation list-stacks --region eu-west-1 --stack-status-filter CREATE_COMPLETE --query "StackSummaries[].[StackName]" --output text | grep frontend | awk -F- '{print $2}')
-              echo "Old workflow Id: ${OldWorkflowId} :end" 
+          command: |
+            aws cloudformation list-stacks --region ${AWS_DEFAULT_REGION} --stack-status-filter CREATE_COMPLETE --query "StackSummaries[].[StackName]" --output text | grep backend | awk -F- '{print $2}' | tee old_workflow.txt
+            export OldWorkflowId=`cat old_workflow.txt`
+            echo "Old workflow Id: ${OldWorkflowId}" 
       - run:
           name: promote
           command: |  
