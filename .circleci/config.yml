@@ -274,18 +274,18 @@ jobs:
       - image: amazon/aws-cli
     steps:
       - checkout
-      - run:
-          name: get stack list
-          command: |
-            export OldWorkflowId=$(aws cloudformation \
-              list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
-              --no-paginate --output text)
-      - run:
-          name: get old workflow id
-          command: |  
-            export STACKS=($(aws cloudformation list-stacks --query "StackSummaries[*].StackName" \
-              --stack-status-filter CREATE_COMPLETE --no-paginate --output text)) 
-            echo "Old workflow Id: ${OldWorkflowId} :end"  
+      # - run:
+      #     name: get stack list
+      #     command: |
+      #       export OldWorkflowId=$(aws cloudformation \
+      #         list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
+      #         --no-paginate --output text)
+      # - run:
+      #     name: get old workflow id
+      #     command: |  
+      #       export STACKS=($(aws cloudformation list-stacks --query "StackSummaries[*].StackName" \
+      #         --stack-status-filter CREATE_COMPLETE --no-paginate --output text)) 
+      #       echo "Old workflow Id: ${OldWorkflowId} :end"  
       - run:
           name: promote
           command: |  
