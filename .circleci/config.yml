@@ -281,13 +281,6 @@ jobs:
       - image: amazon/aws-cli
     steps:
       - checkout
-      - attach_workspace:
-          at: ~/         
-      - run:
-          name: get old workflow id
-          command: |
-            export OldWorkflowId=`cat .circleci/ansible/old_workflow.txt`
-            echo "Old workflow Id: ${OldWorkflowId}" 
       - run:
           name: promote
           command: |  
@@ -296,12 +289,24 @@ jobs:
               --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:7}" \
               --stack-name "cloudfront-${CIRCLE_WORKFLOW_ID:0:7}"  \
               --tags project=udapeople
+  
+  clean-up-old-stack:
+    executor: aws-cli/default
+    steps:
+      - checkout
+      - attach_workspace:
+          at: ~/         
       - run:
-          name: clean old
-          command: |  
-              aws s3 rm s3://frontend-${OldWorkflowId} --recursive
-              aws cloudformation delete-stack --stack-name "frontend-${OldWorkflowId}"
-              aws cloudformation delete-stack --stack-name "cloudfront-${OldWorkflowId}"
+          name: clean old stack
+          command: |
+            export OldWorkflowId=`cat .circleci/ansible/old_workflow.txt`
+            echo "Old workflow Id: ${OldWorkflowId}"      
+      - run:
+          name: Clean S3 bucket
+          command: |
+            aws s3 rm s3://frontend-${OldWorkflowId} --recursive
+            aws cloudformation delete-stack --stack-name "frontend-${OldWorkflowId}"
+            aws cloudformation delete-stack --stack-name "cloudfront-${OldWorkflowId}"
 
 workflows:
   default:
@@ -326,4 +331,6 @@ workflows:
       #     requires: [deploy-frontend-backend]
       - cloudfront-update:
           requires: [deploy-frontend-backend]
+      - clean-up-old-stack:
+          requires: [cloudfront-update]
 
