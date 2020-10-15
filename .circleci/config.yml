@@ -220,16 +220,6 @@ jobs:
               --output text)
             export API_URL="http://${BACKEND_IP}:3030"
             echo "${API_URL}"
-      - destroy-stacks
-      - revert-migrations
-  
-  deploy-frontend:
-    docker:
-      - image: circleci/python:3.8.2
-    steps:
-      - checkout
-      - attach_workspace:
-          at: ~/
       - run:
           name: install frontend dependencies
           command: |
@@ -240,7 +230,7 @@ jobs:
           name: copy frontend files
           command: |
             pip install awscli
-      - run: aws s3 cp frontend/dist s3://udapeople-5efbbb6/ --recursive
+      - run: aws s3 cp frontend/dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7}/ --recursive
       - destroy-stacks
       - revert-migrations
 
@@ -328,12 +318,10 @@ workflows:
       - deploy-infrastructure
       - configure-infrastructure:
           requires: [deploy-infrastructure]
-      - deploy-backend:
+      - deploy-frontend-backend:
           requires: [configure-infrastructure]
-      - deploy-frontend:
-          requires: [deploy-backend]
       # - smoke-test:
       #     requires: [deploy-frontend-backend]
       - cloudfront-update:
-          requires: [deploy-frontend]
+          requires: [deploy-frontend-backend]
 
