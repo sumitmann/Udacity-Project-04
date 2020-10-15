@@ -198,7 +198,7 @@ jobs:
             ansible-playbook -i inventory.txt configure-server.yml
       - destroy-stacks
 
-  deploy-backend-frontend:
+  deploy-frontend-backend:
     docker:
       - image: circleci/python:3.8.2
     steps:
@@ -288,7 +288,7 @@ workflows:
       - deploy-infrastructure
       - configure-infrastructure:
           requires: [deploy-infrastructure]
-      - deploy-frontend:
+      - deploy-frontend-backend:
           requires: [configure-infrastructure]
       - smoke-test:
-          requires: [deploy-frontend]
+          requires: [deploy-frontend-backend]
