@@ -226,8 +226,8 @@ jobs:
             cd frontend
             npm install
             npm run build
-      - run: copy frontend files
-          name: Install awscli
+      - run: 
+          name: copy frontend files
           command: |
             pip install awscli
       - run: aws s3 cp frontend/dist . s3://udapeople-"${CIRCLE_WORKFLOW_ID}" --delete
