@@ -278,7 +278,7 @@ jobs:
 
   cloudfront-update:
     docker:
-      - image: amazon/aws-cli
+      - image: circleci/aws-cli
     steps:
       - checkout
       - run:
@@ -291,7 +291,8 @@ jobs:
               --tags project=udapeople
   
   clean-up-old-stack:
-    executor: aws-cli/default
+    docker: 
+      - image: circleci/aws-cli
     steps:
       - checkout
       - attach_workspace:
