@@ -9,18 +9,37 @@ commands:
             apk add --no-cache python py-pip
             pip install awscli
             aws --version
-  destroy_stacks:
+  destroy-stacks:
     steps:
       - run:
           name: Destroy environment
           command: |
+            aws s3 rb s3://udapeople-"${CIRCLE_WORKFLOW_ID}" --force
             aws cloudformation delete-stack --stack-name frontend-stack
             aws cloudformation delete-stack --stack-name backend-stack
           when: on_fail 
 
-#   revert-migration:
-#     description: Revert the last migration if successfully run in the current workflow.
-#     ...
+  revert-migrations:
+    steps:
+      - run:
+          name: "Revert migrations"
+          command: |
+            cd backend
+            npm install
+            if 
+              (( $( curl -H "token: 366941c3-dc41-4cb0-87ca-36961c6ef2c9" --request GET https://api.memstash.io/values/migration_status ) == 0 )) ; \
+            then 
+              npm run migrations:revert
+              echo "Reverting migrations"
+            else
+              echo "No migration to revert"
+            fi
+          when: on_fail
+      - run:
+          when: on_fail
+          name: Prevents the workflow from continuing
+          command: |
+            circleci-agent step halt
 
 jobs:
 
@@ -143,7 +162,7 @@ jobs:
           root: ~/
           paths:
             - project/.circleci/ansible/inventory.txt
-      - destroy_stacks
+      - destroy-stacks
 
   configure-infrastructure:
     docker:
@@ -177,9 +196,9 @@ jobs:
             cd .circleci/ansible
             tar -czvf ../../backend.tar.gz ../../backend
             ansible-playbook -i inventory.txt configure-server.yml
-      - destroy_stacks
+      - destroy-stacks
 
-  deploy-infrastruture:
+  deploy-frontend:
     docker:
       - image: circleci/python:3.8.2
     steps:
@@ -209,13 +228,43 @@ jobs:
             npm run build
             tar -czvf artifact-"${CIRCLE_WORKFLOW_ID}".tar.gz dist
             aws s3 sync . s3://udapeople-"${CIRCLE_WORKFLOW_ID}" --delete
-      - destroy_stacks
+      - destroy-stacks
+      - revert-migrations
 
-#  run-migrations:
-
-#  deploy-frontend:
-
-#  deploy-backend:  
+  smoke-test:
+    docker:
+      - image: circleci/python:3.8.2
+    steps:
+      - checkout
+      - attach_workspace:
+          at: ~/
+      - run:
+          name: Install dependencies
+          command: |
+            sudo apt-get update
+            sudo apt-get install tar gzip ansible nodejs npm
+            pip install awscli
+      - run:
+          name: Smoke test backend
+          command: |
+            export BACKEND_IP=$(aws ec2 describe-instances \
+              --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID}" \
+              --query 'Reservations[*].Instances[*].PublicIpAddress' \
+              --output text)
+            export API_URL="http://${BACKEND_IP}:3030"
+            curl "${API_URL}/api/status"
+      - run:
+          name: Smoke test frontend
+          command: |
+            export S3_URL="http://udapeople-${CIRCLE_WORKFLOW_ID}.s3.amazonaws.com/index.html#/employees"
+            if curl -s ${S3_URL} | grep "Welcome"
+            then
+              exit 1
+            else
+              exit 0
+            fi
+      - destroy-stacks
+      - revert-migrations 
 
 #  smoke-test:
 
@@ -236,3 +285,9 @@ workflows:
       # - scan-backend:
       #     requires: [scan-frontend]
       - deploy-infrastructure
+      - configure-infrastructure:
+          requires: [deploy-infrastructure]
+      - deploy-frontend:
+          requires: [configure-infrastructure]
+      - smoke-test:
+          requires: [deploy-frontend]
