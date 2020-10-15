@@ -273,19 +273,12 @@ jobs:
     docker:
       - image: amazon/aws-cli
     steps:
-      - checkout
+      - checkout             
       - run:
           name: get old workflow id
-          command: |
-            export OldWorkflowId=$(aws cloudformation \
-              list-exports --query "Exports[?Name==\`ID\`].Value" \
-              --no-paginate --output text)
-            echo "Old workflow Id: ${OldWorkflowId} :end"  
-      - run:
-          name: get stack list 
           command: |  
-            export STACKS=($(aws cloudformation list-stacks --region ${AWS_DEFAULT_REGION} --query "StackSummaries[*].StackName" \
-              --stack-status-filter CREATE_COMPLETE --no-paginate --output text)) 
+            export OldWorkflowId=(aws cloudformation list-stacks --region eu-west-1 --stack-status-filter CREATE_COMPLETE --query "StackSummaries[].[StackName]" --output text | grep frontend | awk -F- '{print $2}')
+              echo "Old workflow Id: ${OldWorkflowId} :end" 
       - run:
           name: promote
           command: |  
@@ -293,13 +286,13 @@ jobs:
               --template-file .circleci/files/cloudfront.yml \
               --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:7}" \
               --stack-name "cloudfront-${CIRCLE_WORKFLOW_ID:0:7}"  \
-              --tags project=udapeople &
-            if [[ "${STACKS[@]}" =~ "${OldWorkflowId}" ]]
-            then
+              --tags project=udapeople
+      - run:
+          name: clean old
+          command: |  
               aws s3 rm s3://frontend-${OldWorkflowId} --recursive
               aws cloudformation delete-stack --stack-name "frontend-${OldWorkflowId}"
               aws cloudformation delete-stack --stack-name "cloudfront-${OldWorkflowId}"
-            fi
 
 workflows:
   default:
