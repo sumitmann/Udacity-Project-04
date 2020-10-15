@@ -15,8 +15,8 @@ commands:
           name: Destroy environment
           command: |
             aws s3 rb s3://udapeople-"${CIRCLE_WORKFLOW_ID:0:7}" --force
-            aws cloudformation delete-stack --stack-name frontend-stack
-            aws cloudformation delete-stack --stack-name backend-stack
+            aws cloudformation delete-stack --stack-name frontend-${CIRCLE_WORKFLOW_ID:0:7}
+            aws cloudformation delete-stack --stack-name backend-${CIRCLE_WORKFLOW_ID:0:7}
           when: on_fail 
 
   revert-migrations:
@@ -142,7 +142,7 @@ jobs:
             aws cloudformation deploy \
             --template-file backend.yml \
             --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"  \
-            --stack-name backend-stack
+            --stack-name backend-${CIRCLE_WORKFLOW_ID:0:7}
       - run:
           name: Deploy Frontend Infrastructure
           command: |
@@ -150,7 +150,7 @@ jobs:
             aws cloudformation deploy \
             --template-file frontend.yml \
             --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"  \
-            --stack-name frontend-stack
+            --stack-name frontend-${CIRCLE_WORKFLOW_ID:0:7}
       - run:
           name: Add Backend EC2 Instance IP to inventory
           command: |
@@ -293,13 +293,13 @@ jobs:
               --template-file .circleci/files/cloudfront.yml \
               --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:7}" \
               --stack-name "cloudfront-${CIRCLE_WORKFLOW_ID:0:7}"  \
-              --tags project=udapeople
-          # if [[ "${STACKS[@]}" =~ "${OldWorkflowId}" ]]
-          # then
-          #   aws s3 rm s3://frontend-${OldWorkflowId} --recursive
-          #   aws cloudformation delete-stack --stack-name "frontend-${OldWorkflowId}"
-          #   aws cloudformation delete-stack --stack-name "cloudfront-${OldWorkflowId}"
-          # fi
+              --tags project=udapeople &
+            if [[ "${STACKS[@]}" =~ "${OldWorkflowId}" ]]
+            then
+              aws s3 rm s3://frontend-${OldWorkflowId} --recursive
+              aws cloudformation delete-stack --stack-name "frontend-${OldWorkflowId}"
+              aws cloudformation delete-stack --stack-name "cloudfront-${OldWorkflowId}"
+            fi
 
 workflows:
   default:
