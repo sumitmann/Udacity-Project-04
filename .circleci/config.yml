@@ -139,7 +139,7 @@ jobs:
           name: save old workflow
           command: |
             aws cloudformation list-stacks --region ${AWS_DEFAULT_REGION} --stack-status-filter CREATE_COMPLETE --query "StackSummaries[].[StackName]" --output text | grep backend | awk -F- '{print $2}' | tee project/.circleci/ansible/old_workflow.txt
-            export OldWorkflowId=`cat project/.circleci/ansible/old_workflow.txt`
+            export OldWorkflowId=`cat .circleci/ansible/old_workflow.txt`
             echo "Old workflow Id: ${OldWorkflowId}"
       - run:
           name: Deploy Backend Infrastructure
@@ -286,7 +286,7 @@ jobs:
       - run:
           name: get old workflow id
           command: |
-            export OldWorkflowId=`cat project/.circleci/ansible/old_workflow.txt`
+            export OldWorkflowId=`cat .circleci/ansible/old_workflow.txt`
             echo "Old workflow Id: ${OldWorkflowId}" 
       - run:
           name: promote
