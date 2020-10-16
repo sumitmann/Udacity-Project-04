@@ -288,20 +288,20 @@ jobs:
           name: Promote
           command: |
             aws cloudformation deploy \
-              --template-file .circleci/files/cloudfront.yml \
+              --template-body .circleci/files/cloudfront.yml \
               --region ${AWS_DEFAULT_REGION} \
               --stack-name udapeople-cloudfront \
-              --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"
+              --parameters "ParameterKey=ID,parameterValue=${CIRCLE_WORKFLOW_ID:0:7}" \
             echo "Delete old infrastructure"
-      # - run:
-      #     name: clean
-      #     command: |
-      #       if [ -n "${OldWorkflowId}" ] && [[ "${STACKS[@]}" =~ "${OldWorkflowId}" ]]
-      #       then
-      #         aws s3 rm s3://frontend-${OldWorkflowId} --recursive
-      #         aws cloudformation delete-stack --stack-name "frontend-${OldWorkflowId}"
-      #         aws cloudformation delete-stack --stack-name "cloudfront-${OldWorkflowId}"
-      #       fi
+      - run:
+          name: clean
+          command: |
+            if [ -n "${OldWorkflowId}" ] && [[ "${STACKS[@]}" =~ "${OldWorkflowId}" ]]
+            then
+              aws s3 rm s3://frontend-${OldWorkflowId} --recursive
+              aws cloudformation delete-stack --stack-name "frontend-${OldWorkflowId}"
+              aws cloudformation delete-stack --stack-name "cloudfront-${OldWorkflowId}"
+            fi
       - destroy-stacks
 
 workflows:
