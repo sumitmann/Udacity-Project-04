@@ -11,3 +11,6 @@ d24ev0c5786oo5.cloudfront.net            # Its loading on https by default and I
 Public URLs to deployed application back-end in EC2 [URL04]:
 http://ec2-54-194-231-158.eu-west-1.compute.amazonaws.com/
 http://ec2-54-194-231-158.eu-west-1.compute.amazonaws.com:3030/api/status
+
+Prometheus [URL 05]:
+http://ec2-52-209-197-150.eu-west-1.compute.amazonaws.com:9090/targets
