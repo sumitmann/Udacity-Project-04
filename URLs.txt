@@ -2,9 +2,12 @@ Public Url to GitHub repository (not private) [URL01]
 - https://github.com/sumitmann/Udacity-Project-04
 - https://github.com/sumitmann/Udacity-Project-04/tree/master/.circleci
 
-Public URL for your S3 Bucket (aka, your green candidate front-end) [URL02]:
+Public URL for your S3 Bucket [URL02]:
+http://udapeople-a21b6df.s3-eu-west-1.amazonaws.com
 
-Public URL for your CloudFront distribution (aka, your blue production front-end) [URL03]:
-
+Public URL for your CloudFront distribution [URL03]:
+d24ev0c5786oo5.cloudfront.net            # Its loading on https by default and I didn't find any way to load it on http and as ec2 is working on http so the api doesn't load.   
 
 Public URLs to deployed application back-end in EC2 [URL04]:
+http://ec2-52-48-131-171.eu-west-1.compute.amazonaws.com:3030/
+http://ec2-52-48-131-171.eu-west-1.compute.amazonaws.com:3030/api/status
