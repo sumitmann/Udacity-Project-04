@@ -296,7 +296,7 @@ jobs:
       - run:
           name: clean
           command: |
-            if [ -n "${OldWorkflowId}" ] && [[ "${STACKS[@]}" =~ "${OldWorkflowId}" ]]
+            if [[ "${STACKS[@]}" =~ "${OldWorkflowId}" ]]
             then
               aws s3 rm s3://frontend-${OldWorkflowId} --recursive
               aws cloudformation delete-stack --stack-name "frontend-${OldWorkflowId}"
@@ -307,23 +307,39 @@ jobs:
 workflows:
   default:
     jobs:
-      # - build-frontend
-      # - test-frontend:
-      #     requires: [build-frontend]
-      # - build-backend:
-      #     requires: [test-frontend]
-      # - test-backend:
-      #     requires: [build-backend]
-      # - scan-frontend:
-      #     requires: [test-backend]
-      # - scan-backend:
-      #     requires: [scan-frontend]
-      - deploy-infrastructure
+      - build-frontend
+      - test-frontend:
+          requires: [build-frontend]
+      - build-backend:
+          requires: [test-frontend]
+      - test-backend:
+          requires: [build-backend]
+      - scan-frontend:
+          requires: [test-backend]
+      - scan-backend:
+          requires: [scan-frontend]
+      - deploy-infrastructure:
+          requires: [scan-backend]
+          filters:
+            branches:
+              only: master
       - configure-infrastructure:
           requires: [deploy-infrastructure]
+          filters:
+            branches:
+              only: master
       - deploy-frontend-backend:
           requires: [configure-infrastructure]
-      # - smoke-test:
-      #     requires: [deploy-frontend-backend]
+          filters:
+            branches:
+              only: master
+      - smoke-test:
+          requires: [deploy-frontend-backend]
+          filters:
+            branches:
+              only: master
       - cloudfront-update:
           requires: [deploy-frontend-backend]
+          filters:
+            branches:
+              only: master
