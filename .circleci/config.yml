@@ -287,7 +287,7 @@ jobs:
       - run:
           name: Promote
           command: |
-            aws cloudformation deploy \
+            aws cloudformation update-stack \
               --template-file .circleci/files/cloudfront.yml \
               --region ${AWS_DEFAULT_REGION} \
               --stack-name udapeople-cloudfront \
